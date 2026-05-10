@@ -39,6 +39,7 @@
             src = ./.;
             vendorHash = "sha256-bQ0KzBryx7hLow1lr7Gtn5TraXLDwI0/fWbpmj//yYE=";
             # Tools needed at build-time (host)
+            proxyVendor = true;
             nativeBuildInputs = [ pkgs.pkg-config ];
 
             # Libraries needed by the executable
