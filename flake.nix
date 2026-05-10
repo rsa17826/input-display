@@ -3,7 +3,7 @@
     nixpkgs = {
       url = "github:NixOS/nixpkgs/nixos-unstable";
     };
-    utils = {
+    flake-utils = {
       url = "github:numtide/flake-utils";
     };
   };
@@ -12,9 +12,9 @@
     {
       self,
       nixpkgs,
-      utils,
+      flake-utils,
     }:
-    utils.lib.eachDefaultSystem (
+    flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = import nixpkgs { inherit system; };
