@@ -1,6 +1,4 @@
 {
-  description = "A simple Go autoclicker";
-
   inputs = {
     nixpkgs = {
       url = "github:NixOS/nixpkgs/nixos-unstable";
