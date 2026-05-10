@@ -357,25 +357,18 @@ func main() {
 	var deviceArg string
 	var detect bool
 
-	argparse.ParseArgs([]argparse.ArgumentData{
-		{Keys: []string{"device", "d"}, AfterCount: 1, Target: &deviceArg},
-		{Keys: []string{"detect"}, AfterCount: 0, Target: &detect},
-	})
-
+	argData := []argparse.ArgumentData{
+		{Keys: []string{"device", "d"}, AfterCount: 1, Target: &deviceArg, Description: "the device to display data from"},
+		{Keys: []string{"detect"}, AfterCount: 0, Target: &detect, Description: "identify the device to use"},
+	}
+	argparse.ParseArgs(argData)
 	if detect {
 		input.GetDeviceToUser()
 		return
 	}
 
 	if deviceArg == "" {
-		fmt.Println("usage:")
-		fmt.Println("  keyshow -d <device>   show key presses for a device")
-		fmt.Println("  keyshow --detect      interactively identify your device")
-		fmt.Println()
-		fmt.Println("device can be:")
-		fmt.Println("  id:<name>     e.g.  id:usb-Logitech_G815-event-kbd")
-		fmt.Println("  name:<name>   e.g.  name:Logitech G815 Keyboard")
-		os.Exit(1)
+		argparse.PrintHelp(argData)
 	}
 
 	devicePath := input.WaitForDevice(deviceArg)
