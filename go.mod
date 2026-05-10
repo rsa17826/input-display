@@ -1,4 +1,4 @@
-module keyshow
+module input-display
 
 go 1.26.2
 
