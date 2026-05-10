@@ -28,7 +28,7 @@ var (
 
 // ── layout constants ──────────────────────────────────────────────────────────
 const (
-	keyUnit  = float32(22) // px per "1 key-width unit" (half size)
+	keyUnit  = float32(22)
 	keyGap   = float32(2)
 	keyH     = float32(20)
 	rowGap   = float32(2)
@@ -393,7 +393,5 @@ func main() {
 
 	go monitorInput(devicePath)
 
-	// Set no-focus window hints after the window is shown.
-	// Runs in a goroutine so ShowAndRun isn't blocked.
 	w.ShowAndRun()
 }
