@@ -57,6 +57,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rsa17826/go-arg-lib v0.0.0-20260510190959-71bddce5485a h1:EqOOhsV+c+DAAf2iIFhGBCzS2pBLBSzYnzSOYl6dNHk=
 github.com/rsa17826/go-arg-lib v0.0.0-20260510190959-71bddce5485a/go.mod h1:eP/bXinIXD6bZWBMqk9eZJfkkKUcl66j0uuz1amrsdU=
+github.com/rsa17826/go-arg-lib v0.0.0-20260510191638-e09f3e8d4477 h1:3AbzdqQROWdMeoBNBCjtp3OPx2DJKn2jlEWj0zxZlHQ=
+github.com/rsa17826/go-arg-lib v0.0.0-20260510191638-e09f3e8d4477/go.mod h1:eP/bXinIXD6bZWBMqk9eZJfkkKUcl66j0uuz1amrsdU=
 github.com/rsa17826/go-input-lib v0.0.0-20260509131009-f59c819593d4 h1:N73ZfpR3QA3XexGkzXPbzaiujdCMzOuDAtZ5c6SD3Cs=
 github.com/rsa17826/go-input-lib v0.0.0-20260509131009-f59c819593d4/go.mod h1:+nUmviXztY9e6S0X7h/vaBJnC06cf5JaH08JiaEht+w=
 github.com/rymdport/portal v0.4.2 h1:7jKRSemwlTyVHHrTGgQg7gmNPJs88xkbKcIL3NlcmSU=

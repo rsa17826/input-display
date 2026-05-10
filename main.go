@@ -368,7 +368,8 @@ func main() {
 	}
 
 	if deviceArg == "" {
-		argparse.PrintHelp(argData)
+		argparse.PrintHelp(argData, []string{})
+		os.Exit(0)
 	}
 
 	devicePath := input.WaitForDevice(deviceArg)
