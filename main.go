@@ -281,7 +281,7 @@ func buildKeyboard() (fyne.CanvasObject, fyne.Size) {
 			rect.Move(fyne.NewPos(x, y))
 			rects = append(rects, rect)
 
-			// text label – split on \n for two-line keys
+			// text label - split on \n for two-line keys
 			lines := strings.Split(k.Label, "\n")
 			lineH := keyH / float32(len(lines)+1)
 			for li, line := range lines {
@@ -336,7 +336,7 @@ func monitorInput(devicePath string) {
 			pressKey(ev.Code)
 		case 0: // key up
 			releaseKey(ev.Code)
-			// value 2 = repeat – ignore
+			// value 2 = repeat - ignore
 		}
 	}
 }
