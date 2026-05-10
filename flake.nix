@@ -18,32 +18,43 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
+
+        # Define the dependencies once so you don't repeat yourself
+        buildDeps = with pkgs; [
+          libGL
+          libX11
+          libXrandr
+          libXinerama
+          libXcursor
+          libXi
+          libXxf86vm
+          mesa
+        ];
       in
       {
         packages = {
-          # The actual package
           default = pkgs.buildGoModule {
             pname = "input-display";
             version = "1";
             src = ./.;
             vendorHash = "sha256-elkbVg/j2lVR/ldNakxmoPgDvR/5l7eQDyS8WJMB58Q=";
+
+            # Tools needed at build-time (host)
+            nativeBuildInputs = [ pkgs.pkg-config ];
+
+            # Libraries needed by the executable
+            buildInputs = buildDeps;
           };
         };
         devShells = {
-          # Development environment
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [
+            # Use 'inputsFrom' to pull dependencies from the package automatically
+            inputsFrom = [ self.packages.${system}.default ];
+
+            # Add extra development tools here
+            nativeBuildInputs = with pkgs; [
               go
               gopls
-              pkg-config
-              mesa
-              libGL
-              libX11
-              libXrandr
-              libXinerama
-              libXcursor
-              libXi
-              libXxf86vm
             ];
           };
         };
