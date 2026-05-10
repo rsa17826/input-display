@@ -26,7 +26,7 @@
             pname = "input-display";
             version = "1";
             src = ./.;
-            vendorHash = "sha256-ePH+0XpQassJG8eZv+Uhxjmd9Du0KYSBjOAboFM34M4=";
+            vendorHash = "sha256-elkbVg/j2lVR/ldNakxmoPgDvR/5l7eQDyS8WJMB58Q=";
           };
         };
         devShells = {
