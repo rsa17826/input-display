@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"os"
 	"strings"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -141,6 +142,13 @@ const (
 	KEY_LEFTMETA   = 125
 	KEY_RIGHTMETA  = 126
 	KEY_COMPOSE    = 127
+	BTN_LEFT       = 272
+	BTN_RIGHT      = 273
+	BTN_MIDDLE     = 274
+
+	// sentinel codes — not real linux keycodes, only used in keyMap
+	WHEEL_UP   = 0xFFF1
+	WHEEL_DOWN = 0xFFF2
 )
 
 // toggle-lock keys (highlight while state is on, not while held)
@@ -186,6 +194,7 @@ var rows = [][]KeyDef{
 		{KEY_DELETE, "Del", 1, 0.5}, {KEY_END, "End", 1, 0}, {KEY_PAGEDOWN, "PgDn", 1, 0},
 		// numpad
 		{KEY_KP7, "7", 1, 0.5}, {KEY_KP8, "8", 1, 0}, {KEY_KP9, "9", 1, 0}, {KEY_KPPLUS, "+", 1, 0},
+		{WHEEL_UP, "▲", .5, 1},
 	},
 	{ // caps row
 		{KEY_CAPSLOCK, "Caps", 1.75, 0},
@@ -196,6 +205,9 @@ var rows = [][]KeyDef{
 		// (nav cluster empty this row)
 		// numpad
 		{KEY_KP4, "4", 1, 4}, {KEY_KP5, "5", 1, 0}, {KEY_KP6, "6", 1, 0}, {0, " ", 1, 0}, // +tall is on row above
+		{BTN_LEFT, "◧", .5, .5},
+		{BTN_MIDDLE, "◫", .5, 0},
+		{BTN_RIGHT, "◨", .5, 0},
 	},
 	{ // shift row
 		{KEY_LEFTSHIFT, "Shift", 2.25, 0},
@@ -206,6 +218,7 @@ var rows = [][]KeyDef{
 		{KEY_UP, "↑", 1, 1.5},
 		// numpad
 		{KEY_KP1, "1", 1, 1.5}, {KEY_KP2, "2", 1, 0}, {KEY_KP3, "3", 1, 0}, {KEY_KPENTER, "Ent", 1, 0},
+		{WHEEL_DOWN, "▼", .5, 1},
 	},
 	{ // ctrl row
 		{KEY_LEFTCTRL, "Ctrl", 1.5, 0}, {KEY_LEFTMETA, "Win", 1, 0}, {KEY_LEFTALT, "Alt", 1.5, 0},
@@ -341,6 +354,48 @@ func monitorInput(devicePath string) {
 	}
 }
 
+func monitorMouse(devicePath string) {
+	f, err := os.Open(devicePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to open mouse device: %v\n", err)
+		return
+	}
+	defer f.Close()
+
+	const linuxRelWheel = 8
+
+	var ev input.InputEvent
+	for {
+		if err := binary.Read(f, binary.NativeEndian, &ev); err != nil {
+			fmt.Fprintf(os.Stderr, "mouse read error: %v\n", err)
+			return
+		}
+		switch ev.Type {
+		case input.EV_KEY: // mouse buttons
+			switch ev.Value {
+			case 1:
+				pressKey(ev.Code)
+			case 0:
+				releaseKey(ev.Code)
+			}
+		case input.EV_REL:
+			if ev.Code == linuxRelWheel {
+				var code uint16
+				if ev.Value > 0 {
+					code = WHEEL_UP
+				} else {
+					code = WHEEL_DOWN
+				}
+				pressKey(code)
+				go func(c uint16) {
+					time.Sleep(120 * time.Millisecond)
+					releaseKey(c)
+				}(code)
+			}
+		}
+	}
+}
+
 // ── dark theme ────────────────────────────────────────────────────────────────
 type darkTheme struct{ fyne.Theme }
 
@@ -357,8 +412,11 @@ func main() {
 	var deviceArg string
 	var detect bool
 
+	var mouseArg string
+
 	argData := []argparse.ArgumentData{
-		{Keys: []string{"device", "d"}, AfterCount: 1, Target: &deviceArg, Description: "the device to display data from"},
+		{Keys: []string{"device", "d"}, AfterCount: 1, Target: &deviceArg, Description: "keyboard device"},
+		{Keys: []string{"mouse", "m"}, AfterCount: 1, Target: &mouseArg, Description: "mouse device"},
 		{Keys: []string{"detect"}, AfterCount: 0, Target: &detect, Description: "identify the device to use"},
 	}
 	argparse.ParseArgs(argData)
@@ -367,13 +425,10 @@ func main() {
 		return
 	}
 
-	if deviceArg == "" {
+	if deviceArg == "" && mouseArg == "" {
 		argparse.PrintHelp(argData, []string{})
 		os.Exit(0)
 	}
-
-	devicePath := input.WaitForDevice(deviceArg)
-	fmt.Println("using device:", devicePath)
 
 	a := app.New()
 	a.Settings().SetTheme(darkTheme{theme.DefaultTheme()})
@@ -385,7 +440,17 @@ func main() {
 	w.Resize(size)
 	w.SetContent(kb)
 
-	go monitorInput(devicePath)
+	if deviceArg != "" {
+		devicePath := input.WaitForDevice(deviceArg)
+		fmt.Println("using keyboard device:", devicePath)
+		go monitorInput(devicePath)
+	}
+
+	if mouseArg != "" {
+		mousePath := input.WaitForDevice(mouseArg)
+		fmt.Println("using mouse device:", mousePath)
+		go monitorMouse(mousePath)
+	}
 
 	w.ShowAndRun()
 }
