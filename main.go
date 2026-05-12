@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"image/color"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -407,6 +410,59 @@ func (darkTheme) Color(n fyne.ThemeColorName, _ fyne.ThemeVariant) color.Color {
 	return theme.DefaultTheme().Color(n, theme.VariantDark)
 }
 
+func con() {
+	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	fmt.Fprintln(conn, "LISTEN")
+
+	scanner := bufio.NewScanner(conn)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		parts := strings.Split(line, ",")
+		if len(parts) != 3 {
+			continue
+		}
+
+		t, err := strconv.ParseUint(parts[0], 10, 16)
+		if err != nil {
+			continue
+		}
+
+		code, err := strconv.ParseUint(parts[1], 10, 16)
+		if err != nil {
+			continue
+		}
+
+		value64, err := strconv.ParseInt(parts[2], 10, 32)
+		if err != nil {
+			continue
+		}
+
+		ev := input.InputEvent{
+			Type:  uint16(t),
+			Code:  uint16(code),
+			Value: int32(value64),
+		}
+
+		if ev.Type != input.EV_KEY {
+			continue
+		}
+		switch ev.Value {
+		case 1: // key down
+			pressKey(ev.Code)
+		case 0: // key up
+			releaseKey(ev.Code)
+			// value 2 = repeat - ignore
+		}
+	}
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 func main() {
 	var deviceArg string
@@ -441,9 +497,13 @@ func main() {
 	w.SetContent(kb)
 
 	if deviceArg != "" {
-		devicePath := input.WaitForDevice(deviceArg)
-		fmt.Println("using keyboard device:", devicePath)
-		go monitorInput(devicePath)
+		if deviceArg == "socket" {
+			go con()
+		} else {
+			devicePath := input.WaitForDevice(deviceArg)
+			fmt.Println("using keyboard device:", devicePath)
+			go monitorInput(devicePath)
+		}
 	}
 
 	if mouseArg != "" {
