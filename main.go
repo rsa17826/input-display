@@ -350,9 +350,10 @@ func monitorInput(devicePath string) {
 			fmt.Fprintf(os.Stderr, "read error: %v\n", err)
 			return
 		}
-		if ev.Type != input.EV_KEY {
-			continue
-		}
+		// if ev.Type != input.EV_KEY {
+		// 	continue
+		// }
+		fmt.Printf("%+v\n", ev)
 		switch ev.Type {
 		case input.EV_KEY: // mouse buttons
 			switch ev.Value {
@@ -440,23 +441,35 @@ func con() {
 	fmt.Fprintln(conn, "LISTEN")
 
 	for {
-		var wire WireEvent
-		err := binary.Read(conn, binary.LittleEndian, &wire)
+		var ev WireEvent
+		err := binary.Read(conn, binary.LittleEndian, &ev)
 		if err != nil {
 			fmt.Println("read error:", err)
 			return
 		}
 
-		if wire.Type != input.EV_KEY {
-			continue
-		}
-
-		switch wire.Value {
-		case 1: // key down
-			pressKey(wire.Code)
-		case 0: // key up
-			releaseKey(wire.Code)
-			// value 2 = repeat, ignore
+		switch ev.Type {
+		case input.EV_KEY: // mouse buttons
+			switch ev.Value {
+			case 1:
+				pressKey(ev.Code)
+			case 0:
+				releaseKey(ev.Code)
+			}
+		case input.EV_REL:
+			if ev.Code == input.REL_WHEEL {
+				var code uint16
+				if ev.Value > 0 {
+					code = WHEEL_UP
+				} else {
+					code = WHEEL_DOWN
+				}
+				pressKey(code)
+				go func(c uint16) {
+					time.Sleep(120 * time.Millisecond)
+					releaseKey(c)
+				}(code)
+			}
 		}
 	}
 }
@@ -494,6 +507,7 @@ func main() {
 	w.Resize(size)
 	w.SetContent(kb)
 
+	print(deviceArg, mouseArg)
 	if deviceArg != "" {
 		if deviceArg == "socket" {
 			go con()
