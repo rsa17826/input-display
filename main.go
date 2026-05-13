@@ -353,12 +353,28 @@ func monitorInput(devicePath string) {
 		if ev.Type != input.EV_KEY {
 			continue
 		}
-		switch ev.Value {
-		case 1: // key down
-			pressKey(ev.Code)
-		case 0: // key up
-			releaseKey(ev.Code)
-			// value 2 = repeat - ignore
+		switch ev.Type {
+		case input.EV_KEY: // mouse buttons
+			switch ev.Value {
+			case 1:
+				pressKey(ev.Code)
+			case 0:
+				releaseKey(ev.Code)
+			}
+		case input.EV_REL:
+			if ev.Code == input.REL_WHEEL {
+				var code uint16
+				if ev.Value > 0 {
+					code = WHEEL_UP
+				} else {
+					code = WHEEL_DOWN
+				}
+				pressKey(code)
+				go func(c uint16) {
+					time.Sleep(120 * time.Millisecond)
+					releaseKey(c)
+				}(code)
+			}
 		}
 	}
 }
@@ -370,8 +386,6 @@ func monitorMouse(devicePath string) {
 		return
 	}
 	defer f.Close()
-
-	const linuxRelWheel = 8
 
 	var ev input.InputEvent
 	for {
@@ -388,7 +402,7 @@ func monitorMouse(devicePath string) {
 				releaseKey(ev.Code)
 			}
 		case input.EV_REL:
-			if ev.Code == linuxRelWheel {
+			if ev.Code == input.REL_WHEEL {
 				var code uint16
 				if ev.Value > 0 {
 					code = WHEEL_UP
