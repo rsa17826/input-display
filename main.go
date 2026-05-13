@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"encoding/binary"
 	"fmt"
 	"image/color"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,6 +18,14 @@ import (
 	argparse "github.com/rsa17826/go-arg-lib"
 	input "github.com/rsa17826/go-input-lib"
 )
+
+type WireEvent struct {
+	Sec   int64
+	Usec  int64
+	Type  uint16
+	Code  uint16
+	Value int32
+}
 
 // ── colours (matches the AHK dark theme) ─────────────────────────────────────
 var (
@@ -419,46 +425,24 @@ func con() {
 
 	fmt.Fprintln(conn, "LISTEN")
 
-	scanner := bufio.NewScanner(conn)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		parts := strings.Split(line, ",")
-		if len(parts) != 3 {
-			continue
-		}
-
-		t, err := strconv.ParseUint(parts[0], 10, 16)
+	for {
+		var wire WireEvent
+		err := binary.Read(conn, binary.LittleEndian, &wire)
 		if err != nil {
+			fmt.Println("read error:", err)
+			return
+		}
+
+		if wire.Type != input.EV_KEY {
 			continue
 		}
 
-		code, err := strconv.ParseUint(parts[1], 10, 16)
-		if err != nil {
-			continue
-		}
-
-		value64, err := strconv.ParseInt(parts[2], 10, 32)
-		if err != nil {
-			continue
-		}
-
-		ev := input.InputEvent{
-			Type:  uint16(t),
-			Code:  uint16(code),
-			Value: int32(value64),
-		}
-
-		if ev.Type != input.EV_KEY {
-			continue
-		}
-		switch ev.Value {
+		switch wire.Value {
 		case 1: // key down
-			pressKey(ev.Code)
+			pressKey(wire.Code)
 		case 0: // key up
-			releaseKey(ev.Code)
-			// value 2 = repeat - ignore
+			releaseKey(wire.Code)
+			// value 2 = repeat, ignore
 		}
 	}
 }
