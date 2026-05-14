@@ -474,28 +474,24 @@ func con() {
 	}
 }
 
-// ── main ──────────────────────────────────────────────────────────────────────
-func main() {
-	var deviceArg string
-	var detect bool
+var deviceArg string
+var mouseArg string
+var sock bool
 
-	var mouseArg string
-
-	argData := []argparse.ArgumentData{
+func init() {
+	argparse.ParseArgs([]argparse.ArgumentData{
 		{Keys: []string{"device", "d"}, AfterCount: 1, Target: &deviceArg, Description: "keyboard device"},
 		{Keys: []string{"mouse", "m"}, AfterCount: 1, Target: &mouseArg, Description: "mouse device"},
-		{Keys: []string{"detect"}, AfterCount: 0, Target: &detect, Description: "identify the device to use"},
-	}
-	argparse.ParseArgs(argData)
-	if detect {
-		input.GetDeviceToUser()
-		return
-	}
+		{Keys: []string{"sock", "s"}, AfterCount: 0, Target: &sock, Description: "use /tmp/kbd_manager.sock for input detection instead of /dev/input"},
+	})
+}
 
-	if deviceArg == "" && mouseArg == "" {
-		argparse.PrintHelp(argData, []string{})
-		os.Exit(0)
-	}
+// ── main ──────────────────────────────────────────────────────────────────────
+func main() {
+	// if deviceArg == "" && mouseArg == "" {
+	// 	argparse.PrintHelp([]string{})
+	// 	os.Exit(0)
+	// }
 
 	a := app.New()
 	a.Settings().SetTheme(darkTheme{theme.DefaultTheme()})
@@ -508,14 +504,12 @@ func main() {
 	w.SetContent(kb)
 
 	print(deviceArg, mouseArg)
-	if deviceArg != "" {
-		if deviceArg == "socket" {
-			go con()
-		} else {
-			devicePath := input.WaitForDevice(deviceArg)
-			fmt.Println("using keyboard device:", devicePath)
-			go monitorInput(devicePath)
-		}
+	if sock {
+		go con()
+	} else if deviceArg != "" {
+		devicePath := input.WaitForDevice(deviceArg)
+		fmt.Println("using keyboard device:", devicePath)
+		go monitorInput(devicePath)
 	}
 
 	if mouseArg != "" {
