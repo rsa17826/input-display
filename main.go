@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -27,13 +28,17 @@ type WireEvent struct {
 	Value int32
 }
 
-// ── colours (matches the AHK dark theme) ─────────────────────────────────────
+// ── colours ───────────────────────────────────────────────────────────────────
 var (
 	colBG      = color.NRGBA{0x2A, 0x2A, 0x2E, 0xFF}
 	colKey     = color.NRGBA{0x01, 0x04, 0x09, 0xFF}
 	colText    = color.NRGBA{0x8B, 0x94, 0x9E, 0xFF}
-	colPressed = color.NRGBA{0x55, 0x3B, 0x6B, 0xFF}
 	colToggled = color.NRGBA{0x55, 0x3B, 0x6A, 0xFF}
+
+	// Three states: real physical press, virtual (injected/passed-through) press, both at once
+	colRealPressed = color.NRGBA{0x55, 0x3B, 0x6B, 0xFF} // purple  — physical key down
+	colVirtPressed = color.NRGBA{0x7A, 0x4A, 0x12, 0xFF} // amber   — virtual key down
+	colBothPressed = color.NRGBA{0x1A, 0x6B, 0x45, 0xFF} // teal    — both simultaneously
 )
 
 // ── layout constants ──────────────────────────────────────────────────────────
@@ -168,12 +173,11 @@ var toggleKeys = map[uint16]bool{
 }
 
 // ── layout definition ─────────────────────────────────────────────────────────
-// Each entry: {keycode, label, widthUnits, extraGapBefore}
 type KeyDef struct {
 	Code  uint16
 	Label string
-	W     float32 // width in key units (default 1)
-	Gap   float32 // extra x-gap before this key in key units
+	W     float32
+	Gap   float32
 }
 
 var rows = [][]KeyDef{
@@ -191,7 +195,6 @@ var rows = [][]KeyDef{
 		{KEY_9, "9", 1, 0}, {KEY_0, "0", 1, 0}, {KEY_MINUS, "-", 1, 0}, {KEY_EQUAL, "=", 1, 0},
 		{KEY_BACKSPACE, "BS", 2, 0},
 		{KEY_INSERT, "Ins", 1, 0.5}, {KEY_HOME, "Home", 1, 0}, {KEY_PAGEUP, "PgUp", 1, 0},
-		// numpad
 		{KEY_NUMLOCK, "Num\nLk", 1, 0.5}, {KEY_KPSLASH, "/", 1, 0}, {KEY_KPASTERISK, "*", 1, 0}, {KEY_KPMINUS, "-", 1, 0},
 	},
 	{ // tab row
@@ -201,7 +204,6 @@ var rows = [][]KeyDef{
 		{KEY_O, "O", 1, 0}, {KEY_P, "P", 1, 0}, {KEY_LEFTBRACE, "[", 1, 0}, {KEY_RIGHTBRACE, "]", 1, 0},
 		{KEY_BACKSLASH, "\\", 1.5, 0},
 		{KEY_DELETE, "Del", 1, 0.5}, {KEY_END, "End", 1, 0}, {KEY_PAGEDOWN, "PgDn", 1, 0},
-		// numpad
 		{KEY_KP7, "7", 1, 0.5}, {KEY_KP8, "8", 1, 0}, {KEY_KP9, "9", 1, 0}, {KEY_KPPLUS, "+", 1, 0},
 		{WHEEL_UP, "▲", .5, 1},
 	},
@@ -211,9 +213,7 @@ var rows = [][]KeyDef{
 		{KEY_G, "G", 1, 0}, {KEY_H, "H", 1, 0}, {KEY_J, "J", 1, 0}, {KEY_K, "K", 1, 0},
 		{KEY_L, "L", 1, 0}, {KEY_SEMICOLON, ";", 1, 0}, {KEY_APOSTROPHE, "'", 1, 0},
 		{KEY_ENTER, "Enter", 2.25, 0},
-		// (nav cluster empty this row)
-		// numpad
-		{KEY_KP4, "4", 1, 4}, {KEY_KP5, "5", 1, 0}, {KEY_KP6, "6", 1, 0}, {0, " ", 1, 0}, // +tall is on row above
+		{KEY_KP4, "4", 1, 4}, {KEY_KP5, "5", 1, 0}, {KEY_KP6, "6", 1, 0}, {0, " ", 1, 0},
 		{BTN_LEFT, "◧", .5, .5},
 		{BTN_MIDDLE, "◫", .5, 0},
 		{BTN_RIGHT, "◨", .5, 0},
@@ -225,7 +225,6 @@ var rows = [][]KeyDef{
 		{KEY_COMMA, ",", 1, 0}, {KEY_DOT, ".", 1, 0}, {KEY_SLASH, "/", 1, 0},
 		{KEY_RIGHTSHIFT, "Shift", 2.75, 0},
 		{KEY_UP, "↑", 1, 1.5},
-		// numpad
 		{KEY_KP1, "1", 1, 1.5}, {KEY_KP2, "2", 1, 0}, {KEY_KP3, "3", 1, 0}, {KEY_KPENTER, "Ent", 1, 0},
 		{WHEEL_DOWN, "▼", .5, 1},
 	},
@@ -234,52 +233,77 @@ var rows = [][]KeyDef{
 		{KEY_SPACE, "Space", 6.00, 0},
 		{KEY_RIGHTALT, "Alt", 1.5, 0}, {KEY_RIGHTMETA, "Win", 1, 0}, {KEY_COMPOSE, "App", 1, 0}, {KEY_RIGHTCTRL, "Ctrl", 1.5, 0},
 		{KEY_LEFT, "←", 1, 0.5}, {KEY_DOWN, "↓", 1, 0}, {KEY_RIGHT, "→", 1, 0},
-		// numpad
-		{KEY_KP0, "0", 2, 0.5}, {KEY_KPDOT, ".", 1, 0}, {0, " ", 1, 0}, // enter tall handled above
+		{KEY_KP0, "0", 2, 0.5}, {KEY_KPDOT, ".", 1, 0}, {0, " ", 1, 0},
 	},
 }
 
 // ── key widget ────────────────────────────────────────────────────────────────
 type KeyWidget struct {
-	rect    *canvas.Rectangle
-	toggle  bool // is this a toggle-lock key?
-	toggled bool // current toggle state
+	mu       sync.Mutex
+	rect     *canvas.Rectangle
+	toggle   bool // is this a toggle-lock key?
+	toggled  bool // current toggle state (CapsLock, NumLock, etc.)
+	realDown bool // physical device is pressing this key
+	virtDown bool // virtual device has this key pressed (passthrough or injected)
 }
 
 var keyMap = map[uint16]*KeyWidget{}
 
-func setKeyColour(kw *KeyWidget, c color.NRGBA) {
+// updateKeyColour recomputes and applies the correct colour for a key based on its state.
+func updateKeyColour(kw *KeyWidget) {
+	var c color.NRGBA
+	switch {
+	case kw.toggle && kw.toggled:
+		c = colToggled
+	case kw.realDown && kw.virtDown:
+		c = colBothPressed
+	case kw.realDown:
+		c = colRealPressed
+	case kw.virtDown:
+		c = colVirtPressed
+	default:
+		c = colKey
+	}
 	kw.rect.FillColor = c
 	fyne.Do(func() {
 		canvas.Refresh(kw.rect)
 	})
 }
 
-func pressKey(code uint16) {
+// pressKey marks a key as pressed from either the real or virtual source.
+func pressKey(code uint16, isVirt bool) {
 	kw, ok := keyMap[code]
 	if !ok {
 		return
 	}
+	kw.mu.Lock()
 	if kw.toggle {
 		kw.toggled = !kw.toggled
-		if kw.toggled {
-			setKeyColour(kw, colToggled)
-		} else {
-			setKeyColour(kw, colKey)
-		}
+	} else if isVirt {
+		kw.virtDown = true
 	} else {
-		setKeyColour(kw, colPressed)
+		kw.realDown = true
 	}
+	kw.mu.Unlock()
+	updateKeyColour(kw)
 }
 
-func releaseKey(code uint16) {
+// releaseKey clears the pressed state for either the real or virtual source.
+func releaseKey(code uint16, isVirt bool) {
 	kw, ok := keyMap[code]
 	if !ok {
 		return
 	}
-	if !kw.toggle {
-		setKeyColour(kw, colKey)
+	kw.mu.Lock()
+	if kw.toggle {
+		kw.toggled = !kw.toggled
+	} else if isVirt {
+		kw.virtDown = true
+	} else {
+		kw.realDown = true
 	}
+	kw.mu.Unlock()
+	updateKeyColour(kw)
 }
 
 // ── build the keyboard canvas ─────────────────────────────────────────────────
@@ -303,7 +327,6 @@ func buildKeyboard() (fyne.CanvasObject, fyne.Size) {
 			rect.Move(fyne.NewPos(x, y))
 			rects = append(rects, rect)
 
-			// text label - split on \n for two-line keys
 			lines := strings.Split(k.Label, "\n")
 			lineH := keyH / float32(len(lines)+1)
 			for li, line := range lines {
@@ -330,12 +353,26 @@ func buildKeyboard() (fyne.CanvasObject, fyne.Size) {
 		y += keyH + rowGap
 	}
 
-	// rects first so texts render on top
 	all := append(rects, texts...)
 	return container.NewWithoutLayout(all...), fyne.NewSize(maxX+10, y+10)
 }
 
-// ── input loop ────────────────────────────────────────────────────────────────
+// ── shared wheel press helper ─────────────────────────────────────────────────
+func handleWheel(wheelVal int32, isVirt bool) {
+	var code uint16
+	if wheelVal > 0 {
+		code = WHEEL_UP
+	} else {
+		code = WHEEL_DOWN
+	}
+	pressKey(code, isVirt)
+	go func(c uint16, v bool) {
+		time.Sleep(120 * time.Millisecond)
+		releaseKey(c, v)
+	}(code, isVirt)
+}
+
+// ── input loop (direct device read, no socket) ────────────────────────────────
 func monitorInput(devicePath string) {
 	f, err := os.Open(devicePath)
 	if err != nil {
@@ -350,31 +387,18 @@ func monitorInput(devicePath string) {
 			fmt.Fprintf(os.Stderr, "read error: %v\n", err)
 			return
 		}
-		// if ev.Type != input.EV_KEY {
-		// 	continue
-		// }
 		fmt.Printf("%+v\n", ev)
 		switch ev.Type {
-		case input.EV_KEY: // mouse buttons
+		case input.EV_KEY:
 			switch ev.Value {
 			case 1:
-				pressKey(ev.Code)
+				pressKey(ev.Code, false)
 			case 0:
-				releaseKey(ev.Code)
+				releaseKey(ev.Code, false)
 			}
 		case input.EV_REL:
 			if ev.Code == input.REL_WHEEL {
-				var code uint16
-				if ev.Value > 0 {
-					code = WHEEL_UP
-				} else {
-					code = WHEEL_DOWN
-				}
-				pressKey(code)
-				go func(c uint16) {
-					time.Sleep(120 * time.Millisecond)
-					releaseKey(c)
-				}(code)
+				handleWheel(ev.Value, false)
 			}
 		}
 	}
@@ -395,26 +419,88 @@ func monitorMouse(devicePath string) {
 			return
 		}
 		switch ev.Type {
-		case input.EV_KEY: // mouse buttons
+		case input.EV_KEY:
 			switch ev.Value {
 			case 1:
-				pressKey(ev.Code)
+				pressKey(ev.Code, false)
 			case 0:
-				releaseKey(ev.Code)
+				releaseKey(ev.Code, false)
 			}
 		case input.EV_REL:
 			if ev.Code == input.REL_WHEEL {
-				var code uint16
-				if ev.Value > 0 {
-					code = WHEEL_UP
-				} else {
-					code = WHEEL_DOWN
-				}
-				pressKey(code)
-				go func(c uint16) {
-					time.Sleep(120 * time.Millisecond)
-					releaseKey(c)
-				}(code)
+				handleWheel(ev.Value, false)
+			}
+		}
+	}
+}
+
+// ── socket listeners ──────────────────────────────────────────────────────────
+
+// con connects as LISTEN and reflects real physical input events.
+func con() {
+	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	fmt.Fprintln(conn, "LISTEN")
+
+	for {
+		var ev WireEvent
+		err := binary.Read(conn, binary.LittleEndian, &ev)
+		if err != nil {
+			fmt.Println("LISTEN read error:", err)
+			return
+		}
+
+		switch ev.Type {
+		case input.EV_KEY:
+			switch ev.Value {
+			case 1:
+				pressKey(ev.Code, false)
+			case 0:
+				releaseKey(ev.Code, false)
+			}
+		case input.EV_REL:
+			if ev.Code == input.REL_WHEEL {
+				handleWheel(ev.Value, false)
+			}
+		}
+	}
+}
+
+// conVirt connects as LISTEN_VIRT and reflects events that reached the virtual device.
+// This covers both passthrough (non-blocked real events) and injected events.
+func conVirt() {
+	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+	if err != nil {
+		fmt.Println("LISTEN_VIRT connect error:", err)
+		return
+	}
+	defer conn.Close()
+
+	fmt.Fprintln(conn, "LISTEN_VIRT")
+
+	for {
+		var ev WireEvent
+		err := binary.Read(conn, binary.LittleEndian, &ev)
+		if err != nil {
+			fmt.Println("LISTEN_VIRT read error:", err)
+			return
+		}
+
+		switch ev.Type {
+		case input.EV_KEY:
+			switch ev.Value {
+			case 1:
+				pressKey(ev.Code, true)
+			case 0:
+				releaseKey(ev.Code, true)
+			}
+		case input.EV_REL:
+			if ev.Code == input.REL_WHEEL {
+				handleWheel(ev.Value, true)
 			}
 		}
 	}
@@ -431,49 +517,6 @@ func (darkTheme) Color(n fyne.ThemeColorName, _ fyne.ThemeVariant) color.Color {
 	return theme.DefaultTheme().Color(n, theme.VariantDark)
 }
 
-func con() {
-	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
-
-	fmt.Fprintln(conn, "LISTEN")
-
-	for {
-		var ev WireEvent
-		err := binary.Read(conn, binary.LittleEndian, &ev)
-		if err != nil {
-			fmt.Println("read error:", err)
-			return
-		}
-
-		switch ev.Type {
-		case input.EV_KEY: // mouse buttons
-			switch ev.Value {
-			case 1:
-				pressKey(ev.Code)
-			case 0:
-				releaseKey(ev.Code)
-			}
-		case input.EV_REL:
-			if ev.Code == input.REL_WHEEL {
-				var code uint16
-				if ev.Value > 0 {
-					code = WHEEL_UP
-				} else {
-					code = WHEEL_DOWN
-				}
-				pressKey(code)
-				go func(c uint16) {
-					time.Sleep(120 * time.Millisecond)
-					releaseKey(c)
-				}(code)
-			}
-		}
-	}
-}
-
 var deviceArg string
 var mouseArg string
 var sock bool
@@ -482,17 +525,12 @@ func init() {
 	argparse.ParseArgs([]argparse.ArgumentData{
 		{Keys: []string{"device", "d"}, AfterCount: 1, Target: &deviceArg, Description: "keyboard device"},
 		{Keys: []string{"mouse", "m"}, AfterCount: 1, Target: &mouseArg, Description: "mouse device"},
-		{Keys: []string{"sock", "s"}, AfterCount: 0, Target: &sock, Description: "use /tmp/kbd_manager.sock for input detection instead of /dev/input"},
+		{Keys: []string{"sock", "s"}, AfterCount: 0, Target: &sock, Description: "use /tmp/kbd_manager.sock for input (shows real + virtual state)"},
 	})
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
 func main() {
-	// if deviceArg == "" && mouseArg == "" {
-	// 	argparse.PrintHelp([]string{})
-	// 	os.Exit(0)
-	// }
-
 	a := app.New()
 	a.Settings().SetTheme(darkTheme{theme.DefaultTheme()})
 
@@ -504,18 +542,23 @@ func main() {
 	w.SetContent(kb)
 
 	print(deviceArg, mouseArg)
-	if sock {
-		go con()
-	} else if deviceArg != "" {
-		devicePath := input.WaitForDevice(deviceArg)
-		fmt.Println("using keyboard device:", devicePath)
-		go monitorInput(devicePath)
-	}
 
-	if mouseArg != "" {
-		mousePath := input.WaitForDevice(mouseArg)
-		fmt.Println("using mouse device:", mousePath)
-		go monitorMouse(mousePath)
+	if sock {
+		// Connect as both LISTEN (real events) and LISTEN_VIRT (virtual device events)
+		// so keys can be shown in three states: real-only, virt-only, or both.
+		go con()
+		go conVirt()
+	} else {
+		if deviceArg != "" {
+			devicePath := input.WaitForDevice(deviceArg)
+			fmt.Println("using keyboard device:", devicePath)
+			go monitorInput(devicePath)
+		}
+		if mouseArg != "" {
+			mousePath := input.WaitForDevice(mouseArg)
+			fmt.Println("using mouse device:", mousePath)
+			go monitorMouse(mousePath)
+		}
 	}
 
 	w.ShowAndRun()
