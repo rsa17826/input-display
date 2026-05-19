@@ -284,8 +284,8 @@ func pressKey(code uint16, isVirt bool) {
 	} else {
 		kw.realDown = true
 	}
-	kw.mu.Unlock()
 	updateKeyColour(kw)
+	kw.mu.Unlock()
 }
 
 // releaseKey clears the pressed state for either the real or virtual source.
@@ -298,12 +298,12 @@ func releaseKey(code uint16, isVirt bool) {
 	if kw.toggle {
 		kw.toggled = !kw.toggled
 	} else if isVirt {
-		kw.virtDown = true
+		kw.virtDown = false
 	} else {
-		kw.realDown = true
+		kw.realDown = false
 	}
-	kw.mu.Unlock()
 	updateKeyColour(kw)
+	kw.mu.Unlock()
 }
 
 // ── build the keyboard canvas ─────────────────────────────────────────────────
