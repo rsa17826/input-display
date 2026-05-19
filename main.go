@@ -264,9 +264,9 @@ func updateKeyColour(kw *KeyWidget) {
 	default:
 		c = colKey
 	}
-	kw.rect.FillColor = c
 	fyne.Do(func() {
-		canvas.Refresh(kw.rect)
+		kw.rect.FillColor = c
+		kw.rect.Refresh()
 	})
 }
 
