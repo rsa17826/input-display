@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"image/color"
-	"net"
 	"os"
 	"strings"
 	"sync"
@@ -18,15 +17,8 @@ import (
 
 	argparse "github.com/rsa17826/go-arg-lib"
 	input "github.com/rsa17826/go-input-lib"
+	"github.com/rsa17826/input-manager/IMan"
 )
-
-type WireEvent struct {
-	Sec   int64
-	Usec  int64
-	Type  uint16
-	Code  uint16
-	Value int32
-}
 
 // ── colours ───────────────────────────────────────────────────────────────────
 var (
@@ -438,17 +430,15 @@ func monitorMouse(devicePath string) {
 
 // con connects as LISTEN and reflects real physical input events.
 func con() {
-	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+	conn, err := IMan.Connect(IMan.ModeListen)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 
-	fmt.Fprintln(conn, "LISTEN")
-
 	for {
-		var ev WireEvent
-		err := binary.Read(conn, binary.LittleEndian, &ev)
+		var ev IMan.WireEvent
+		err := conn.Read(&ev)
 		if err != nil {
 			fmt.Println("LISTEN read error:", err)
 			return
@@ -473,18 +463,16 @@ func con() {
 // conVirt connects as LISTEN_VIRT and reflects events that reached the virtual device.
 // This covers both passthrough (non-blocked real events) and injected events.
 func conVirt() {
-	conn, err := net.Dial("unix", "/tmp/kbd_manager.sock")
+	conn, err := IMan.Connect(IMan.ModeVirtListen)
 	if err != nil {
 		fmt.Println("LISTEN_VIRT connect error:", err)
 		return
 	}
 	defer conn.Close()
 
-	fmt.Fprintln(conn, "LISTEN_VIRT")
-
 	for {
-		var ev WireEvent
-		err := binary.Read(conn, binary.LittleEndian, &ev)
+		var ev IMan.WireEvent
+		err := conn.Read(&ev)
 		if err != nil {
 			fmt.Println("LISTEN_VIRT read error:", err)
 			return
