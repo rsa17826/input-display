@@ -430,7 +430,7 @@ func monitorMouse(devicePath string) {
 
 // con connects as LISTEN and reflects real physical input events.
 func con() {
-	conn, err := IMan.Connect(IMan.ModeListen)
+	conn, err := IMan.Connect("Key Display", IMan.ModeListen)
 	if err != nil {
 		panic(err)
 	}
