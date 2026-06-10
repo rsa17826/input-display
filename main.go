@@ -438,12 +438,12 @@ func con() {
 
 	for {
 		var ev IMan.WireEvent
-		err := conn.Read(&ev)
+		resp, err := conn.ReadNext()
 		if err != nil {
 			fmt.Println("LISTEN read error:", err)
 			return
 		}
-
+		ev = resp.Event
 		switch ev.Type {
 		case input.EV_KEY:
 			switch ev.Value {
@@ -472,11 +472,12 @@ func conVirt() {
 
 	for {
 		var ev IMan.WireEvent
-		err := conn.Read(&ev)
+		resp, err := conn.ReadNext()
 		if err != nil {
 			fmt.Println("LISTEN_VIRT read error:", err)
 			return
 		}
+		ev = resp.Event
 
 		switch ev.Type {
 		case input.EV_KEY:
