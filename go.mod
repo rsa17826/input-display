@@ -5,13 +5,15 @@ go 1.26.2
 require (
 	fyne.io/fyne/v2 v2.7.3
 	github.com/rsa17826/go-arg-lib v0.0.69
-	github.com/rsa17826/go-input-lib v0.0.32
+	github.com/rsa17826/go-input-lib v0.0.38
+	github.com/rsa17826/input-manager v0.0.64
 )
 
 require (
 	fyne.io/systray v1.12.1 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/esiqveland/notify v0.13.3 // indirect
 	github.com/fredbi/uri v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/fyne-io/gl-js v0.2.0 // indirect
@@ -31,7 +33,6 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.6.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rsa17826/input-manager v0.0.43 // indirect
 	github.com/rymdport/portal v0.4.2 // indirect
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
@@ -39,7 +40,7 @@ require (
 	github.com/yuin/goldmark v1.8.2 // indirect
 	golang.org/x/image v0.40.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

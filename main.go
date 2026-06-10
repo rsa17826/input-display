@@ -463,7 +463,7 @@ func con() {
 // conVirt connects as LISTEN_VIRT and reflects events that reached the virtual device.
 // This covers both passthrough (non-blocked real events) and injected events.
 func conVirt() {
-	conn, err := IMan.Connect(IMan.ModeVirtListen)
+	conn, err := IMan.Connect("Key Display", IMan.ModeVirtListen)
 	if err != nil {
 		fmt.Println("LISTEN_VIRT connect error:", err)
 		return
