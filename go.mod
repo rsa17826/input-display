@@ -6,7 +6,7 @@ require (
 	fyne.io/fyne/v2 v2.7.3
 	github.com/rsa17826/go-arg-lib v0.0.69
 	github.com/rsa17826/go-input-lib v0.0.38
-	github.com/rsa17826/input-manager v0.0.64
+	github.com/rsa17826/input-manager v0.0.69
 )
 
 require (
