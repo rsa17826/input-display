@@ -38,7 +38,7 @@
             pname = "input-display";
             version = "1";
             src = ./.;
-            vendorHash = "sha256-MSC5o5uVMnO9g5Fn7H+S5NCq1S+N/ez5rCRB3DR9QnM=";
+            vendorHash = "sha256-vAl53WcIeJ5Ua7YwpZYcn2tesvsfR2Zy90W7rv+kHT4=";
             # Tools needed at build-time (host)
             proxyVendor = true;
             nativeBuildInputs = [ pkgs.pkg-config ];
