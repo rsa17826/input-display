@@ -5,8 +5,8 @@ go 1.26.2
 require (
 	fyne.io/fyne/v2 v2.7.3
 	github.com/rsa17826/go-arg-lib v0.0.69
-	github.com/rsa17826/go-input-lib v0.0.39
-	github.com/rsa17826/input-manager v0.0.83
+	github.com/rsa17826/go-input-lib v0.0.46
+	github.com/rsa17826/input-manager v0.0.85
 )
 
 require (

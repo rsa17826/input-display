@@ -57,10 +57,10 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rsa17826/go-arg-lib v0.0.69 h1:G7TYCqUIw3z0QO2v5NHG4VDgY+5JR2nYInGDgxkoFdY=
 github.com/rsa17826/go-arg-lib v0.0.69/go.mod h1:eP/bXinIXD6bZWBMqk9eZJfkkKUcl66j0uuz1amrsdU=
-github.com/rsa17826/go-input-lib v0.0.39 h1:TJCHIDeFKMUtsshDxNWt9WMs+5I00qrdFkHmIW50wC0=
-github.com/rsa17826/go-input-lib v0.0.39/go.mod h1:T1wppzAanzal1KNtIJpew4sIFwCtlBWegq0vDriqwC0=
-github.com/rsa17826/input-manager v0.0.83 h1:CUA2X2dDtxjFPTTeDYHpQfzt1d94foiJosKeVIPdneA=
-github.com/rsa17826/input-manager v0.0.83/go.mod h1:roxAmjwCUVQ/inEH3vjYgbEhjbjtAmFGKDfz/wjnMr8=
+github.com/rsa17826/go-input-lib v0.0.46 h1:bcBAZ1niIfyEppqO679JwSGMpYQs8xs+GS1huCJMjts=
+github.com/rsa17826/go-input-lib v0.0.46/go.mod h1:T1wppzAanzal1KNtIJpew4sIFwCtlBWegq0vDriqwC0=
+github.com/rsa17826/input-manager v0.0.85 h1:CcSBNKsoBoUU7045LruOeXx8JhzLbaRYMCRm57OrMfc=
+github.com/rsa17826/input-manager v0.0.85/go.mod h1:roxAmjwCUVQ/inEH3vjYgbEhjbjtAmFGKDfz/wjnMr8=
 github.com/rymdport/portal v0.4.2 h1:7jKRSemwlTyVHHrTGgQg7gmNPJs88xkbKcIL3NlcmSU=
 github.com/rymdport/portal v0.4.2/go.mod h1:kFF4jslnJ8pD5uCi17brj/ODlfIidOxlgUDTO5ncnC4=
 github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c h1:km8GpoQut05eY3GiYWEedbTT0qnSxrCjsVbb7yKY1KE=
